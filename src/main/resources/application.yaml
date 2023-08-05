@@ -1,0 +1,65 @@
+spring:
+  profiles:
+    active: local
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:tcp://localhost/~/buildup
+    # url: jdbc:h2:~/buildup
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: buildupbackend0204@gmail.com
+    password: rcubjtfyxnhyqcnf
+    properties:
+      mail:
+        smtp:
+          timeout: 10000000
+          starttls:
+            enable: true
+          auth: true
+
+  servlet:
+    multipart:
+      max-request-size: 1GB
+      max-file-size: 1GB
+
+cloud:
+  aws:
+    stack:
+      auto: false
+    region:
+      static: ap-northeast-2
+    s3:
+      bucket: buildup0204-bucket
+    credentials:
+      access-key: AKIAXCLGSTB7P66SLYVI
+      secret-key: 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
+
+logging:
+  level:
+    com:
+      amazonaws:
+        util:
+          EC2MetadataUtils: error
+
+# jwt secret key 설정
+jwt:
+  secret: 'c2lsdmVybmluZS10ZWNoLXNwcmluZy1ib290LWp3dC10dXRvcmlhbC1zZWNyZXQtc2lsdmVybmluZS10ZWNoLXNwcmluZy1ib290LWp3dC10dXRvcmlhbC1zZWNyZXQK'
+
+
+app:
+  auth:
+    tokenSecret: 926D96C90030DD58429D2751AC1BDBBC
+    #-> 리프레시 토큰 발급용
+    tokenExpiry: 1800000
+    refreshTokenExpiry: 604800000
