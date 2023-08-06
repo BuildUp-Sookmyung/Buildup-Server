@@ -6,6 +6,7 @@ build/
 !**/src/test/**/build/
 application.properties
 application.yml
+application.yaml
 application-dev.yml
 application-dep.yml
 
