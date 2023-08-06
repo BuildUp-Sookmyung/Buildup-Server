@@ -46,19 +46,22 @@ public class RecordService {
     @Transactional
     public Long createRecord(RecordSaveRequest requestDto, List<MultipartFile> multipartFiles) {
 
+        if (multipartFiles == null || multipartFiles.isEmpty()) {
+            throw new RecordException(RecordErrorCode.WRONG_INPUT_CONTENT);
+        }
         Activity activity = activityRepository.findById(requestDto.getActivityId())
                 .orElseThrow(() -> new ActivityException(ActivityErrorCode.ACTIVITY_NOT_FOUND));
         Record record = requestDto.toRecord(activity);
-
-        if (multipartFiles == null) {throw new RecordException(RecordErrorCode.WRONG_INPUT_CONTENT);}
-
+        //TODO:set을 updaterecord로 고치기
+        record.setActivity(activity);
         recordRepository.save(record);
 
-        List<String> imgUrls = s3Service.uploadRecord(multipartFiles);
-        for (String imgUrl : imgUrls) {
+        for (MultipartFile multipartFile : multipartFiles) {
+            String imgUrl = s3Service.uploadOneRecord(multipartFile);
             RecordImg recordImg = new RecordImg(imgUrl, record);
             recordImgRepository.save(recordImg);
         }
+
         return record.getId();
     }
 
@@ -95,22 +98,33 @@ public class RecordService {
 
     @Transactional
     public void updateRecordImage(RecordImageUpdateRequest requestDto, List<MultipartFile> multipartFiles){
-        // TODO: record 존재하는지만 확인하면 됨. 변수에 저장할 필요X
+
         Record record = recordRepository.findById(requestDto.getRecordid())
                 .orElseThrow(() -> new RecordException(RecordErrorCode.NOT_FOUND_RECORD));
         List<RecordImg> recordImagesByRecordId = recordImgRepository.findByRecordId(requestDto.getRecordid());
+
+        int existingImagesCount = recordImagesByRecordId.size();
+        int newImagesCount = multipartFiles.size();
+
         List<String> imgUrls = s3Service.uploadRecord(multipartFiles);
-        for(RecordImg recordImg : recordImagesByRecordId){
-            String old_url = recordImg.getStoreUrl();
-            String new_url = imgUrls.get(recordImagesByRecordId.indexOf(recordImg));
-            if(old_url == null){
-                recordImg.setStoreUrl(new_url);
-            }else{
-                s3Service.deleteOneRecord(old_url);
-                recordImg.setStoreUrl(new_url);
+
+        for(int i=0; i<newImagesCount; i++) {
+            if(i < existingImagesCount) {
+                String old_url = recordImagesByRecordId.get(i).getStoreUrl();
+                if(old_url != null){
+                    s3Service.deleteOneRecord(old_url);
+                }
+                recordImagesByRecordId.get(i).setStoreUrl(imgUrls.get(i));
+            } else {
+                RecordImg newRecordImg = new RecordImg(imgUrls.get(i), record);
+                recordImgRepository.save(newRecordImg);
             }
         }
 
+        for(int i=newImagesCount; i<existingImagesCount; i++) {
+            s3Service.deleteOneRecord(recordImagesByRecordId.get(i).getStoreUrl());
+            recordImgRepository.delete(recordImagesByRecordId.get(i));
+        }
     }
 
     @Transactional
