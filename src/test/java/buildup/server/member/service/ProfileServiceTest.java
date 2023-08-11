@@ -49,7 +49,7 @@ class ProfileServiceTest extends DummyObject {
         );
 
         Member member = newMember(loginRequest);
-        Profile profile = profileRequest.toProfile();
+        Profile profile = profileRequest.toProfile(member);
         List<Interest> interestList = new ArrayList<>();
         Interest interest1 = new Interest(profile, "연구/개발");
         Interest interest2 = new Interest(profile, "디자인");
