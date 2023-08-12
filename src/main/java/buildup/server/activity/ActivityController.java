@@ -3,15 +3,24 @@ package buildup.server.activity;
 import buildup.server.activity.dto.*;
 import buildup.server.activity.service.ActivityService;
 import buildup.server.category.dto.CategorySaveRequest;
+import buildup.server.common.exception.DtoValidationErrorCode;
+import buildup.server.common.response.ErrorEntity;
 import buildup.server.common.response.StringResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/activities")
 @RequiredArgsConstructor
@@ -24,6 +33,7 @@ public class ActivityController {
      * */
     @PostMapping
     public StringResponse createActivity(@Valid @RequestPart ActivitySaveRequest request, @RequestPart MultipartFile img) {
+        log.info("ActivityController 호출");
         Long id = activityService.createActivity(request, img);
         return new StringResponse("활동을 생성했습니다. id: " + id);
     }
