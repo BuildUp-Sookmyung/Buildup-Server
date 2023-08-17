@@ -1,11 +1,13 @@
 package buildup.server.activity;
 
+import buildup.server.activity.domain.Activity;
 import buildup.server.activity.dto.*;
 import buildup.server.activity.service.ActivityService;
 import buildup.server.category.dto.CategorySaveRequest;
 import buildup.server.common.exception.DtoValidationErrorCode;
 import buildup.server.common.response.ErrorEntity;
 import buildup.server.common.response.StringResponse;
+import buildup.server.member.service.S3Service;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ import java.util.Map;
 public class ActivityController {
 
     private final ActivityService activityService;
+    private final S3Service s3Service;
 
     /**
      * 활동 기록 생성
@@ -34,8 +37,14 @@ public class ActivityController {
     @PostMapping
     public StringResponse createActivity(@Valid @RequestPart ActivitySaveRequest request, @RequestPart MultipartFile img) {
         log.info("ActivityController 호출");
-        Long id = activityService.createActivity(request, img);
-        return new StringResponse("활동을 생성했습니다. id: " + id);
+
+        Activity activity = activityService.createActivity(request);
+        String activityUrl = null;
+        if (! img.isEmpty())
+            activityUrl = s3Service.uploadActivity(activity, img);
+        activity.setActivityImg(activityUrl);
+
+        return new StringResponse("활동을 생성했습니다. id: " + activity.getId());
     }
 
     /**

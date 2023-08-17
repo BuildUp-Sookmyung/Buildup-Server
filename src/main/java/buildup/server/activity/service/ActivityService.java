@@ -45,8 +45,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ActivityService {
 
-    private final ActivityFormService activityFormService;
     private final ActivityRepository activityRepository;
+    private final RecordRepository recordRepository;
     private final MemberRepository memberRepository;
     private final MemberService memberService;
     private final CategoryRepository categoryRepository;
@@ -56,15 +56,14 @@ public class ActivityService {
     private LocalDate nowDate;
 
     @Transactional
-    public Long createActivity(ActivitySaveRequest requestDto, MultipartFile img) {
+    public Activity createActivity(ActivitySaveRequest requestDto) {
 
-        Activity activity = activityFormService.saveActivity(requestDto);
+        Member member = memberService.findCurrentMember();
+        Category category = categoryRepository.findById(requestDto.getCategoryId())
+                .orElseThrow(() -> new CategoryException(CategoryErrorCode.CATEGORY_NOT_FOUND));
+        categoryService.checkCategoryAuthForRead(member, category);
 
-        String activityUrl = null;
-        if (! img.isEmpty())
-            activityUrl = s3Service.uploadActivity(activity.getId(), img);
-        activity.setActivityImg(activityUrl);
-        return activity.getId();
+        return activityRepository.save(requestDto.toActivity(member, category));
     }
 
     // 기록(메인) - 전체
@@ -144,7 +143,12 @@ public class ActivityService {
 
     @Transactional
     public void updateActivities(ActivityUpdateRequest requestDto) {
-        activityFormService.updateActivity(requestDto);
+        Activity activity = activityRepository.findById(requestDto.getId())
+                .orElseThrow(() -> new ActivityException(ActivityErrorCode.ACTIVITY_NOT_FOUND));
+        Category category = categoryRepository.findById(requestDto.getCategoryId())
+                .orElseThrow(() -> new CategoryException(CategoryErrorCode.CATEGORY_NOT_FOUND));
+        activity.updateActivity(category, requestDto.getActivityName(), requestDto.getHostName(), requestDto.getRoleName(),
+                requestDto.getStartDate(), requestDto.getEndDate(),requestDto.getUrlName());
     }
 
     @Transactional
@@ -169,8 +173,19 @@ public class ActivityService {
     }
     @Transactional
     public void deleteActivity(Long id) {
-        activityFormService.deleteActivity(id);
+        Activity activity= activityRepository.findById(id)
+                .orElseThrow(() -> new ActivityException(ActivityErrorCode.ACTIVITY_NOT_FOUND));
+        checkActivityAuth(activity, memberService.findCurrentMember());
+        List<Record> childRecords = recordRepository.findAllByActivity(activity);
+        recordRepository.deleteAll(childRecords);
+        activityRepository.delete(activity);
     }
+
+    private void checkActivityAuth(Activity activity, Member member) {
+        if (! activity.getMember().equals(member))
+            throw new ActivityException(ActivityErrorCode.ACTIVITY_NO_AUTH);
+    }
+
     private LocalDate convertLocalDate(String value) {
         return LocalDate.of(Integer.valueOf(value.substring(0,4)),
                 Integer.valueOf(value.substring(5)),

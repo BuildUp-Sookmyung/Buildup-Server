@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
-class ActivityFormServiceTest extends DummyObject {
+class ActivityServiceTest extends DummyObject {
 
     @InjectMocks
-    private ActivityFormService activityFormService;
+    private ActivityService activityService;
     @Mock
     private CategoryRepository categoryRepository;
     @Mock
@@ -72,7 +72,7 @@ class ActivityFormServiceTest extends DummyObject {
         Mockito.when(categoryRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Optional.of(category));
         Mockito.when(activityRepository.save(ArgumentMatchers.any())).thenReturn(activityToSave);
 
-        Activity activity = activityFormService.saveActivity(dto);
+        Activity activity = activityService.createActivity(dto);
 
         Optional<Activity> activityById = activityRepository.findById(member.getId());
 

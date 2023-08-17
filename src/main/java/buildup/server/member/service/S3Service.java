@@ -61,10 +61,10 @@ public class S3Service {
     }
 
     @Transactional
-    public String uploadActivity(Long activityId, MultipartFile multipartFile) {
+    public String uploadActivity(Activity activity, MultipartFile multipartFile) {
         String originalFilename = multipartFile.getOriginalFilename();
         String ext = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
-        String storeFileName = "activity" + activityId.toString() + "." + ext;
+        String storeFileName = "activity" + activity.getId().toString() + "." + ext;
         String key = "activities/" + storeFileName;
 
         return putObject(multipartFile, key);
