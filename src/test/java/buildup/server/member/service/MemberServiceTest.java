@@ -67,8 +67,7 @@ class MemberServiceTest extends DummyObject {
 
 
         // when
-        T
-        okenDto tokenDto = memberService.join(request);
+        TokenDto tokenDto = memberService.join(request);
         Optional<Member> memberOptional = memberRepository.findById(member.getId());
 
         // then

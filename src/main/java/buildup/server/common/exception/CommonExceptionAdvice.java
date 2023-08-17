@@ -6,19 +6,24 @@ import buildup.server.common.response.ErrorEntity;
 import buildup.server.member.exception.MemberException;
 import buildup.server.record.exception.RecordException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
-public class CommonExceptionAdvice {
+public class CommonExceptionAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(S3Exception.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -67,4 +72,14 @@ public class CommonExceptionAdvice {
                 errors);
     }
 
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors()
+                .forEach(c -> errors.put(((FieldError) c).getField(), c.getDefaultMessage()));
+        log.error("Dto Validation Exception({}): {}", DtoValidationErrorCode.BAD_INPUT, errors);
+        return new ResponseEntity<>(new ErrorEntity(DtoValidationErrorCode.BAD_INPUT.toString(),
+                DtoValidationErrorCode.BAD_INPUT.getDefaultMessage(),
+                errors), HttpStatus.BAD_REQUEST);
+    }
 }
