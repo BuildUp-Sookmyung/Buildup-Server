@@ -6,6 +6,7 @@ import buildup.server.activity.repository.ActivityRepository;
 import buildup.server.category.Category;
 import buildup.server.category.CategoryRepository;
 import buildup.server.category.CategoryService;
+import buildup.server.category.exception.CategoryException;
 import buildup.server.common.DummyObject;
 import buildup.server.member.domain.Member;
 import buildup.server.member.domain.Profile;
@@ -22,6 +23,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class ActivityServiceTest extends DummyObject {
@@ -58,7 +61,7 @@ class ActivityServiceTest extends DummyObject {
         profileEntity.setMember(member);
 
         Category category = new Category("스터디/동아리", 1L, member);
-        ActivitySaveRequest dto = ActivitySaveRequest
+        ActivitySaveRequest correctDto = ActivitySaveRequest
                 .builder()
                 .activityName("JPA 스터디")
                 .categoryId(1L)
@@ -66,16 +69,29 @@ class ActivityServiceTest extends DummyObject {
                 .startDate(LocalDate.of(2023,8,1))
                 .endDate(LocalDate.of(2023,8,31))
                 .build();
-        Activity activityToSave = dto.toActivity(member, category);
+        ActivitySaveRequest incorrectDto = ActivitySaveRequest
+                .builder()
+                .activityName("JPA 스터디")
+                .categoryId(10L)
+                .roleName("member")
+                .startDate(LocalDate.of(2023,8,1))
+                .endDate(LocalDate.of(2023,8,31))
+                .build();
+        Activity activityToSave = correctDto.toActivity(member, category);
+        Activity incorrectActivity = incorrectDto.toActivity(member, null);
 
         Mockito.when(memberService.findCurrentMember()).thenReturn(member);
         Mockito.when(categoryRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Optional.of(category));
-        Mockito.when(activityRepository.save(ArgumentMatchers.any())).thenReturn(activityToSave);
+        Mockito.when(activityRepository.save(activityToSave)).thenReturn(activityToSave);
+        Mockito.when(activityRepository.save(incorrectActivity)).thenReturn(incorrectActivity);
 
-        Activity activity = activityService.createActivity(dto);
+        Activity activity = activityService.createActivity(correctDto);
 
-        Optional<Activity> activityById = activityRepository.findById(member.getId());
+        Assertions.assertThat(activity).isEqualTo(activityToSave);
+        assertThrows(
+                CategoryException.class,
+                () -> activityService.createActivity(incorrectDto)
+        );
 
-        Assertions.assertThat(activity.getId()).isEqualTo(activityById.get().getId());
     }
 }
