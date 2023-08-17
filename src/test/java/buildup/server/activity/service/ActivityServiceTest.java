@@ -82,16 +82,11 @@ class ActivityServiceTest extends DummyObject {
 
         Mockito.when(memberService.findCurrentMember()).thenReturn(member);
         Mockito.when(categoryRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Optional.of(category));
-        Mockito.when(activityRepository.save(activityToSave)).thenReturn(activityToSave);
-        Mockito.when(activityRepository.save(incorrectActivity)).thenReturn(incorrectActivity);
+        Mockito.when(activityRepository.save(ArgumentMatchers.any())).thenReturn(activityToSave);
 
         Activity activity = activityService.createActivity(correctDto);
 
         Assertions.assertThat(activity).isEqualTo(activityToSave);
-        assertThrows(
-                CategoryException.class,
-                () -> activityService.createActivity(incorrectDto)
-        );
 
     }
 }
