@@ -15,12 +15,10 @@ import buildup.server.member.exception.MemberErrorCode;
 import buildup.server.member.exception.MemberException;
 import buildup.server.member.repository.MemberRepository;
 import buildup.server.member.service.MemberService;
-import buildup.server.member.service.S3Service;
 import buildup.server.record.domain.Record;
 import buildup.server.record.repository.RecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,9 +41,6 @@ public class ActivityService {
     private final MemberService memberService;
     private final CategoryRepository categoryRepository;
     private final CategoryService categoryService;
-    private final S3Service s3Service;
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate nowDate;
 
     @Transactional
     public Activity createActivity(ActivitySaveRequest requestDto) {
@@ -175,7 +170,7 @@ public class ActivityService {
 
     private Integer calculatePercentage(LocalDate startDate, LocalDate endDate){
 
-        nowDate = LocalDate.now(); //현재시간
+        LocalDate nowDate = LocalDate.now(); //현재시간
 
         Duration duration = Duration.between(startDate.atStartOfDay(), endDate.atStartOfDay());
         double betweenDays = (double) duration.toDays(); //간격(일기준)

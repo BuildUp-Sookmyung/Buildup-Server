@@ -26,13 +26,13 @@ public class ActivityController {
      * 활동 기록 생성
      * */
     @PostMapping
-    public StringResponse createActivity(@Valid @RequestPart ActivitySaveRequest request, @RequestPart MultipartFile img) {
+    public StringResponse createActivity(@Valid @RequestPart ActivitySaveRequest request, @RequestPart MultipartFile requestImg) {
         log.info("ActivityController 호출");
 
         Activity activity = activityService.createActivity(request);
         String activityUrl = null;
-        if (! img.isEmpty())
-            activityUrl = s3Service.uploadActivityImg(activity, img);
+        if (! requestImg.isEmpty())
+            activityUrl = s3Service.uploadActivityImg(activity, requestImg);
         activity.setActivityImg(activityUrl);
 
         return new StringResponse("활동을 생성했습니다. id: " + activity.getId());
