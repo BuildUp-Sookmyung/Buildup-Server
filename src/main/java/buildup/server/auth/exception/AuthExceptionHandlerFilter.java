@@ -32,6 +32,7 @@ public class AuthExceptionHandlerFilter extends OncePerRequestFilter {
     }
 
     public void sendError(HttpServletResponse response, AuthErrorCode code, String message) {
+        log.error("Catch Error in ExceptionHandlerFilter");
         ObjectMapper objectMapper = new ObjectMapper();
         BasicResponse<Object> basicResponse = ResponseUtil.error(
                 new ErrorEntity(code.toString(), message, null)

@@ -23,7 +23,7 @@ import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
-public class CommonExceptionAdvice extends ResponseEntityExceptionHandler {
+public class CommonExceptionAdvice {
 
     @ExceptionHandler(S3Exception.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -72,14 +72,14 @@ public class CommonExceptionAdvice extends ResponseEntityExceptionHandler {
                 errors);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors()
-                .forEach(c -> errors.put(((FieldError) c).getField(), c.getDefaultMessage()));
-        log.error("Dto Validation Exception({}): {}", DtoValidationErrorCode.BAD_INPUT, errors);
-        return new ResponseEntity<>(new ErrorEntity(DtoValidationErrorCode.BAD_INPUT.toString(),
-                DtoValidationErrorCode.BAD_INPUT.getDefaultMessage(),
-                errors), HttpStatus.BAD_REQUEST);
-    }
+//    @Override
+//    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+//        Map<String, String> errors = new HashMap<>();
+//        ex.getBindingResult().getAllErrors()
+//                .forEach(c -> errors.put(((FieldError) c).getField(), c.getDefaultMessage()));
+//        log.error("Dto Validation Exception({}): {}", DtoValidationErrorCode.BAD_INPUT, errors);
+//        return new ResponseEntity<>(new ErrorEntity(DtoValidationErrorCode.BAD_INPUT.toString(),
+//                DtoValidationErrorCode.BAD_INPUT.getDefaultMessage(),
+//                errors), HttpStatus.BAD_REQUEST);
+//    }
 }

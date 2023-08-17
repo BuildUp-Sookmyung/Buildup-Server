@@ -2,6 +2,8 @@ package buildup.server.record.controller;
 
 import buildup.server.common.response.StringResponse;
 import buildup.server.member.service.S3Service;
+import buildup.server.record.domain.Record;
+import buildup.server.record.domain.RecordImg;
 import buildup.server.record.dto.*;
 import buildup.server.record.exception.RecordErrorCode;
 import buildup.server.record.exception.RecordException;
@@ -12,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -22,14 +25,25 @@ import java.util.List;
 public class RecordController {
 
     private final RecordService recordService;
-
     private final S3Service s3Service;
 
-
     @PostMapping
-    public StringResponse createRecord(@RequestPart RecordSaveRequest request, @RequestPart(required=false) List<MultipartFile> multipartFiles) {
-        Long id = recordService.createRecord(request, multipartFiles);
-        return new StringResponse("기록을 생성했습니다. id: " + id);
+    public StringResponse createRecord(@Valid @RequestPart RecordSaveRequest request, @RequestPart(required=false) List<MultipartFile> multipartFiles) {
+
+        Record record = recordService.createRecord(request);
+
+        List<String> urlList = new ArrayList<>();
+        if (requestImagesExisted(multipartFiles)) {
+            urlList = s3Service.uploadRecordImg(multipartFiles);
+        }
+
+        recordService.createRecordImages(record, urlList);
+
+        return new StringResponse("기록을 생성했습니다. id: " + record.getId());
+    }
+
+    private boolean requestImagesExisted(List<MultipartFile> multipartFiles) {
+        return !(multipartFiles == null || multipartFiles.isEmpty());
     }
 
     @GetMapping("/{recordId}")

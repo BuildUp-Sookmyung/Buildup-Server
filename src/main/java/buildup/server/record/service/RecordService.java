@@ -39,25 +39,14 @@ public class RecordService {
     private final S3Service s3Service;
 
     @Transactional
-    public Long createRecord(RecordSaveRequest requestDto, List<MultipartFile> multipartFiles) {
+    public Record createRecord(RecordSaveRequest requestDto) {
 
-        if (multipartFiles == null || multipartFiles.isEmpty()) {
-            throw new RecordException(RecordErrorCode.WRONG_INPUT_CONTENT);
-        }
         Activity activity = activityRepository.findById(requestDto.getActivityId())
                 .orElseThrow(() -> new ActivityException(ActivityErrorCode.ACTIVITY_NOT_FOUND));
         Record record = requestDto.toRecord(activity);
         //TODO:set을 updaterecord로 고치기
         record.setActivity(activity);
-        recordRepository.save(record);
-
-        for (MultipartFile multipartFile : multipartFiles) {
-            String imgUrl = s3Service.uploadOneRecordImg(multipartFile);
-            RecordImg recordImg = new RecordImg(imgUrl, record);
-            recordImgRepository.save(recordImg);
-        }
-
-        return record.getId();
+        return recordRepository.save(record);
     }
 
 
@@ -153,5 +142,13 @@ public class RecordService {
     }
 
 
-
+    public void createRecordImages(Record record, List<String> urls) {
+        urls.forEach(
+                url -> {
+                    RecordImg recordImg = new RecordImg(url, record);
+                    recordImgRepository.save(recordImg);
+                    record.getImages().add(recordImg);
+                }
+        );
+    }
 }
