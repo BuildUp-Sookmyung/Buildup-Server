@@ -149,7 +149,7 @@ public class ActivityService {
         Activity activity = activityRepository.findById(requestDto.getActivityId())
                 .orElseThrow(() -> new ActivityException(ActivityErrorCode.ACTIVITY_NOT_FOUND));
 
-
+        return activity;
     }
 
     @Transactional
