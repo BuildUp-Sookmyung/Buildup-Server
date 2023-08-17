@@ -32,7 +32,7 @@ public class ActivityController {
         Activity activity = activityService.createActivity(request);
         String activityUrl = null;
         if (! img.isEmpty())
-            activityUrl = s3Service.uploadActivity(activity, img);
+            activityUrl = s3Service.uploadActivityImg(activity, img);
         activity.setActivityImg(activityUrl);
 
         return new StringResponse("활동을 생성했습니다. id: " + activity.getId());
@@ -85,11 +85,11 @@ public class ActivityController {
         Activity activity = activityService.getActivityById(request, requestImg);
 
         if (activity.imgExisted()) {
-            s3Service.deleteActivity(activity.getActivityImg());
+            s3Service.deleteActivityImg(activity.getActivityImg());
             activity.setActivityImg(null);
         }
         if (!requestImg.isEmpty()) {
-            String url = s3Service.uploadActivity(activity, requestImg);
+            String url = s3Service.uploadActivityImg(activity, requestImg);
             activity.setActivityImg(url);
         }
 
