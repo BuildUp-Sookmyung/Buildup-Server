@@ -17,26 +17,18 @@ import buildup.server.member.repository.MemberRepository;
 import buildup.server.member.service.MemberService;
 import buildup.server.member.service.S3Service;
 import buildup.server.record.domain.Record;
-import buildup.server.record.exception.RecordErrorCode;
-import buildup.server.record.exception.RecordException;
 import buildup.server.record.repository.RecordRepository;
-import buildup.server.record.service.RecordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -152,25 +144,14 @@ public class ActivityService {
     }
 
     @Transactional
-    public void updateActivityImages(ActivityImageUpdateRequest requestDto, MultipartFile img) {
-        Member member = memberService.findCurrentMember();
+    public Activity getActivityById(ActivityImageUpdateRequest requestDto, MultipartFile img) {
+        memberService.findCurrentMember();
         Activity activity = activityRepository.findById(requestDto.getActivityId())
                 .orElseThrow(() -> new ActivityException(ActivityErrorCode.ACTIVITY_NOT_FOUND));
 
-        String activity_url = activity.getActivityImg();
 
-        if (! img.isEmpty()) {
-            if (activity_url != null)
-                s3Service.deleteActivity(activity_url);
-            String url = s3Service.uploadActivity(activity.getId(), img);
-            activity.setActivityImg(url);
-        } else {
-            if (activity_url != null) {
-                s3Service.deleteActivity(activity_url);
-                activity.setActivityImg(null);
-            }
-        }
     }
+
     @Transactional
     public void deleteActivity(Long id) {
         Activity activity= activityRepository.findById(id)

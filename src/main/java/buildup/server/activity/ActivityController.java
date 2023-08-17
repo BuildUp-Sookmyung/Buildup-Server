@@ -3,24 +3,15 @@ package buildup.server.activity;
 import buildup.server.activity.domain.Activity;
 import buildup.server.activity.dto.*;
 import buildup.server.activity.service.ActivityService;
-import buildup.server.category.dto.CategorySaveRequest;
-import buildup.server.common.exception.DtoValidationErrorCode;
-import buildup.server.common.response.ErrorEntity;
 import buildup.server.common.response.StringResponse;
 import buildup.server.member.service.S3Service;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -90,8 +81,18 @@ public class ActivityController {
     }
 
     @PutMapping("/img")
-    public StringResponse updateActivityImg(@Valid @RequestPart ActivityImageUpdateRequest request, @RequestPart MultipartFile img) {
-        activityService.updateActivityImages(request, img);
+    public StringResponse updateActivityImg(@Valid @RequestPart ActivityImageUpdateRequest request, @RequestPart MultipartFile requestImg) {
+        Activity activity = activityService.getActivityById(request, requestImg);
+
+        if (activity.imgExisted()) {
+            s3Service.deleteActivity(activity.getActivityImg());
+            activity.setActivityImg(null);
+        }
+        if (!requestImg.isEmpty()) {
+            String url = s3Service.uploadActivity(activity, requestImg);
+            activity.setActivityImg(url);
+        }
+
         return new StringResponse("활동 이미지 수정 완료되었습니다");
     }
 

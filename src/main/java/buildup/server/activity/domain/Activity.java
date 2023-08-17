@@ -75,4 +75,8 @@ public class Activity {
         this.url = url;
     }
 
+    public boolean imgExisted() {
+        return !this.activityImg.isEmpty();
+    }
+
 }
