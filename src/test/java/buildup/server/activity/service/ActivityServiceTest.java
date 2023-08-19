@@ -5,29 +5,26 @@ import buildup.server.activity.dto.ActivitySaveRequest;
 import buildup.server.activity.repository.ActivityRepository;
 import buildup.server.category.Category;
 import buildup.server.category.CategoryRepository;
+import buildup.server.category.CategoryService;
+import buildup.server.category.exception.CategoryException;
 import buildup.server.common.DummyObject;
 import buildup.server.member.domain.Member;
 import buildup.server.member.domain.Profile;
 import buildup.server.member.dto.LocalJoinRequest;
 import buildup.server.member.dto.ProfileSaveRequest;
 import buildup.server.member.service.MemberService;
-import buildup.server.member.service.S3Service;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class ActivityServiceTest extends DummyObject {
@@ -41,13 +38,12 @@ class ActivityServiceTest extends DummyObject {
     @Mock
     private MemberService memberService;
     @Mock
-    private S3Service s3Service;
+    private CategoryService categoryService;
     @Spy
     private BCryptPasswordEncoder passwordEncoder;
 
     @Test
-    public void 활동생성_test() throws IOException {
-
+    public void 활동데이터_test() {
         ArrayList<String> interests = new ArrayList<>();
         interests.add("연구/개발");
         interests.add("디자인");
@@ -65,7 +61,7 @@ class ActivityServiceTest extends DummyObject {
         profileEntity.setMember(member);
 
         Category category = new Category("스터디/동아리", 1L, member);
-        ActivitySaveRequest dto = ActivitySaveRequest
+        ActivitySaveRequest correctDto = ActivitySaveRequest
                 .builder()
                 .activityName("JPA 스터디")
                 .categoryId(1L)
@@ -73,17 +69,24 @@ class ActivityServiceTest extends DummyObject {
                 .startDate(LocalDate.of(2023,8,1))
                 .endDate(LocalDate.of(2023,8,31))
                 .build();
+        ActivitySaveRequest incorrectDto = ActivitySaveRequest
+                .builder()
+                .activityName("JPA 스터디")
+                .categoryId(10L)
+                .roleName("member")
+                .startDate(LocalDate.of(2023,8,1))
+                .endDate(LocalDate.of(2023,8,31))
+                .build();
+        Activity activityToSave = correctDto.toActivity(member, category);
+        Activity incorrectActivity = incorrectDto.toActivity(member, null);
 
         Mockito.when(memberService.findCurrentMember()).thenReturn(member);
         Mockito.when(categoryRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Optional.of(category));
-        Mockito.when(activityRepository.save(ArgumentMatchers.any())).thenReturn(dto.toActivity(member, category));
-        Mockito.when(s3Service.uploadActivity(ArgumentMatchers.anyLong(), ArgumentMatchers.any())).thenReturn("sample-url");
+        Mockito.when(activityRepository.save(ArgumentMatchers.any())).thenReturn(activityToSave);
 
-        Long activityId = activityService.createActivity(dto, new MockMultipartFile(
-                "image", "profile.png", "image/png", new FileInputStream("")));
+        Activity activity = activityService.createActivity(correctDto);
 
-        Assertions.assertThat(activityId).isEqualTo(1L);
+        Assertions.assertThat(activity).isEqualTo(activityToSave);
 
     }
-
 }

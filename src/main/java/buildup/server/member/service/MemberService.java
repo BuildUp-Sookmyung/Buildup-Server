@@ -1,6 +1,7 @@
 package buildup.server.member.service;
 
 import buildup.server.auth.domain.*;
+import buildup.server.auth.dto.TokenDto;
 import buildup.server.auth.service.AuthService;
 import buildup.server.member.domain.Member;
 import buildup.server.member.domain.Provider;
@@ -47,12 +48,13 @@ public class MemberService {
 
     // 일반 회원가입 후 자동 로그인
     @Transactional
-    public AuthInfo join(LocalJoinRequest request) throws IOException {
+    public TokenDto join(LocalJoinRequest request) {
         // 기존 회원 확인
-        if (memberRepository.findByUsername(request.getUsername()).isPresent())
-            throw new MemberException(MemberErrorCode.MEMBER_DUPLICATED);
+        List<Member> members = memberRepository.findAllByEmailAndUsername(
+                request.getProfile().getEmail(),
+                request.getUsername()
+        );
 
-        List<Member> members = memberRepository.findAllByEmail(request.getProfile().getEmail());
         for (Member member: members) {
             if (member.getProvider() == Provider.LOCAL)
                 throw new MemberException(MemberErrorCode.MEMBER_DUPLICATED);
@@ -64,23 +66,23 @@ public class MemberService {
 
         // 자동 로그인
         LoginRequest loginRequest = LoginRequest.toLoginRequest(request);
-        return new AuthInfo(
-                authService.createAuth(loginRequest),
-                authService.setRefreshToken(loginRequest)
+        return new TokenDto(
+                authService.createAuth(loginRequest).getToken(),
+                authService.setRefreshToken(loginRequest).getRefreshToken()
         );
     }
 
     // 일반 로그인
     @Transactional
-    public AuthInfo signIn(LoginRequest request) {
+    public TokenDto signIn(LoginRequest request) {
         // 회원이 가입되어 있는지 확인
         memberRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         //로그인
-        return new AuthInfo(
-                authService.createAuth(request),
-                authService.setRefreshToken(request)
+        return new TokenDto(
+                authService.createAuth(request).getToken(),
+                authService.setRefreshToken(request).getRefreshToken()
         );
     }
 
@@ -98,25 +100,25 @@ public class MemberService {
     }
 
     @Transactional
-    public AuthInfo join(SocialJoinRequest request) throws IOException {
+    public TokenDto join(SocialJoinRequest request) throws IOException {
         if (memberRepository.findByUsername(request.getProvider()+request.getProfile().getEmail()).isPresent())
             throw new MemberException(MemberErrorCode.MEMBER_DUPLICATED);
         Member saveMember = saveMember(request, SOCIAL_PW);
         profileService.saveProfile(request.getProfile(), saveMember);
         LoginRequest loginRequest = LoginRequest.toLoginRequest(request, SOCIAL_PW);
-        return new AuthInfo(
-                authService.createAuth(loginRequest),
-                authService.setRefreshToken(loginRequest)
+        return new TokenDto(
+                authService.createAuth(loginRequest).getToken(),
+                authService.setRefreshToken(loginRequest).getRefreshToken()
         );
 
     }
 
     @Transactional
-    public AuthInfo signIn(SocialLoginRequest request) {
+    public TokenDto signIn(SocialLoginRequest request) {
         LoginRequest loginRequest = LoginRequest.toLoginRequest(request, SOCIAL_PW);
-        return new AuthInfo(
-                authService.createAuth(loginRequest),
-                authService.setRefreshToken(loginRequest)
+        return new TokenDto(
+                authService.createAuth(loginRequest).getToken(),
+                authService.setRefreshToken(loginRequest).getRefreshToken()
         );
     }
 

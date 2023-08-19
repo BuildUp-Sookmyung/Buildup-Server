@@ -88,12 +88,12 @@ public class ProfileService {
         if (! img.isEmpty()) {
             //기존 이미지 있으면 delete
             if (imgUrl != null)
-                s3Service.deleteProfile(imgUrl);
-            String url = s3Service.uploadProfile(member.getId(), img);
+                s3Service.deleteProfileImg(imgUrl);
+            String url = s3Service.uploadProfileImg(member.getId(), img);
             profile.setImgUrl(url);
         } else { // 입력 없으면 기존 값 삭제
             if (imgUrl != null) {
-                s3Service.deleteProfile(imgUrl);
+                s3Service.deleteProfileImg(imgUrl);
                 profile.setImgUrl(null);
             }
         }

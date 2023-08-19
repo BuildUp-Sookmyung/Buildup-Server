@@ -18,8 +18,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(MockitoExtension.class)
 class ProfileServiceTest extends DummyObject {
 
@@ -49,7 +47,7 @@ class ProfileServiceTest extends DummyObject {
         );
 
         Member member = newMember(loginRequest);
-        Profile profile = profileRequest.toProfile();
+        Profile profile = profileRequest.toProfile(member);
         List<Interest> interestList = new ArrayList<>();
         Interest interest1 = new Interest(profile, "연구/개발");
         Interest interest2 = new Interest(profile, "디자인");

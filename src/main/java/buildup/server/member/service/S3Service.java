@@ -4,7 +4,6 @@ import buildup.server.activity.domain.Activity;
 import buildup.server.common.exception.S3ErrorCode;
 import buildup.server.common.exception.S3Exception;
 import buildup.server.member.domain.Member;
-import buildup.server.member.domain.Profile;
 import buildup.server.member.repository.MemberRepository;
 import buildup.server.record.exception.RecordErrorCode;
 import buildup.server.record.exception.RecordException;
@@ -32,16 +31,13 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class S3Service {
-
-    private final MemberRepository memberRepository;
-
     private final AmazonS3Client amazonS3Client;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
     @Transactional
-    public String uploadProfile(Long memberId, MultipartFile multipartFile) {
+    public String uploadProfileImg(Long memberId, MultipartFile multipartFile) {
         String originalFilename = multipartFile.getOriginalFilename();
         String ext = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
         String storeFileName = "profile" + memberId.toString() + "." + ext;
@@ -51,7 +47,7 @@ public class S3Service {
     }
 
     @Transactional
-    public void deleteProfile(String key) {
+    public void deleteProfileImg(String key) {
         try{
             amazonS3Client.deleteObject(bucket, key.substring(59));
         } catch (Exception ex) {
@@ -61,17 +57,17 @@ public class S3Service {
     }
 
     @Transactional
-    public String uploadActivity(Long activityId, MultipartFile multipartFile) {
+    public String uploadActivityImg(Activity activity, MultipartFile multipartFile) {
         String originalFilename = multipartFile.getOriginalFilename();
         String ext = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
-        String storeFileName = "activity" + activityId.toString() + "." + ext;
+        String storeFileName = "activity" + activity.getId().toString() + "." + ext;
         String key = "activities/" + storeFileName;
 
         return putObject(multipartFile, key);
     }
 
     @Transactional
-    public void deleteActivity(String key) {
+    public void deleteActivityImg(String key) {
         try{
             amazonS3Client.deleteObject(bucket, key.substring(59));
         } catch (Exception ex) {
@@ -80,7 +76,7 @@ public class S3Service {
         }
     }
     @Transactional
-    public List<String> uploadRecord(List<MultipartFile> multipartFiles) {
+    public List<String> uploadRecordImg(List<MultipartFile> multipartFiles) {
 
         if (multipartFiles.size() > 3) { throw new RecordException(RecordErrorCode.FILE_COUNT_EXCEED);} // 파일 업로드 갯수 3개 이하
 
@@ -125,7 +121,7 @@ public class S3Service {
     }
 
     @Transactional
-    public String uploadOneRecord(MultipartFile multipartFile) {
+    public String uploadOneRecordImg(MultipartFile multipartFile) {
 
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentType("image/png");
@@ -140,7 +136,7 @@ public class S3Service {
     }
 
     @Transactional
-    public void deleteOneRecord(String key) {
+    public void deleteOneRecordImg(String key) {
         try{
             amazonS3Client.deleteObject(bucket, key.substring(59));
         } catch (Exception ex) {
@@ -164,14 +160,5 @@ public class S3Service {
 
         return amazonS3Client.getUrl(bucket, key).toString();
     }
-
-
-    private Member findCurrentMember() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Member member = memberRepository.findByUsername(authentication.getName()).get();
-        return member;
-    }
-
-
 
 }

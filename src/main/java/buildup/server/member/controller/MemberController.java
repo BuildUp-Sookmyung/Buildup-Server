@@ -74,9 +74,8 @@ public class MemberController {
     }
 
     @PostMapping("/local")
-    public TokenDto joinByLocalAccount(@Valid @RequestBody LocalJoinRequest request) throws IOException {
-        AuthInfo info = memberService.join(request);
-        return new TokenDto(info.getAccessToken().getToken(), info.getMemberRefreshToken().getRefreshToken());
+    public TokenDto joinByLocalAccount(@Valid @RequestBody LocalJoinRequest request) {
+        return memberService.join(request);
     }
 
     @PostMapping("/id-check")
@@ -87,8 +86,7 @@ public class MemberController {
 
     @PostMapping("/login")
     public TokenDto signInByLocalAccount(@Valid @RequestBody LoginRequest loginRequest) {
-        AuthInfo info = memberService.signIn(loginRequest);
-        return new TokenDto(info.getAccessToken().getToken(), info.getMemberRefreshToken().getRefreshToken());
+        return memberService.signIn(loginRequest);
     }
 
     @PostMapping("/social-access")
@@ -103,16 +101,14 @@ public class MemberController {
     @PostMapping("/social-token")
     public TokenDto signInBySocialAccount(@Valid @RequestBody SocialLoginRequest request) {
         Provider.toProvider(request.getProvider());
-        AuthInfo info = memberService.signIn(request);
-        return new TokenDto(info.getAccessToken().getToken(), info.getMemberRefreshToken().getRefreshToken());
+        return memberService.signIn(request);
     }
 
     // 소셜로그인 접근 시 신규 회원일 때 프로필 입력 후 토큰 반환
     @PostMapping("/social-profile")
     public TokenDto joinBySocialAccount(@Valid @RequestBody SocialJoinRequest request ) throws IOException {
         Provider.toProvider(request.getProvider());
-        AuthInfo info = memberService.join(request);
-        return new TokenDto(info.getAccessToken().getToken(), info.getMemberRefreshToken().getRefreshToken());
+        return memberService.join(request);
     }
 
     @PostMapping("/reissue")

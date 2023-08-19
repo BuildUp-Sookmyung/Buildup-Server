@@ -31,7 +31,6 @@ import java.util.Date;
 @Service
 public class AuthService {
 
-    private final MemberRepository memberRepository;
     private final AuthTokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AppProperties appProperties;

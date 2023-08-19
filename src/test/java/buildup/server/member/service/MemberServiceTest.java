@@ -1,26 +1,25 @@
 package buildup.server.member.service;
 
-import buildup.server.auth.domain.AuthInfo;
+import buildup.server.auth.domain.AuthTokenProvider;
+import buildup.server.auth.domain.MemberRefreshToken;
+import buildup.server.auth.dto.TokenDto;
 import buildup.server.auth.service.AuthService;
 import buildup.server.common.DummyObject;
-import buildup.server.entity.Interest;
 import buildup.server.member.domain.Member;
 import buildup.server.member.domain.Profile;
 import buildup.server.member.dto.LocalJoinRequest;
 import buildup.server.member.dto.ProfileSaveRequest;
 import buildup.server.member.repository.MemberRepository;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.test.context.support.WithSecurityContext;
-import org.springframework.security.test.context.support.WithSecurityContextFactory;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest extends DummyObject {
@@ -39,29 +38,40 @@ class MemberServiceTest extends DummyObject {
     @Test
     public void 일반회원가입_test() throws Exception {
         // given
+        AuthTokenProvider tokenProvider = new AuthTokenProvider("jdakslfjwfsndjnvkafwkfsksldnfldkslfnkenfwnaefnnwenfjkajgknksjnfgjwen");
+
         ArrayList<String> interests = new ArrayList<>();
         interests.add("연구/개발");
         interests.add("디자인");
+        ProfileSaveRequest profileSaveRequest = new ProfileSaveRequest("jojo",
+                "username@naver.com",
+                "Sookmyung Women's University",
+                "Computer Science", "4", "N", interests);
         LocalJoinRequest request = new LocalJoinRequest(
                 "username",
                 passwordEncoder.encode("password4321"),
-                new ProfileSaveRequest("jojo",
-                        "username@naver.com",
-                        "Sookmyung Women's Universitiy",
-                        "Computer Science", "4", "N", interests),
+                profileSaveRequest,
                 "Y"
         );
         Member member = newMember(request);
-        Profile profileEntity = request.getProfile().toProfile();
+        Profile profileEntity = request.getProfile().toProfile(member);
 
-        Mockito.when(memberRepository.findByUsername(ArgumentMatchers.any())).thenReturn(Optional.empty());
+        Mockito.when(memberRepository.findAllByEmailAndUsername(ArgumentMatchers.any(), ArgumentMatchers.any()))
+                .thenReturn(new ArrayList<>());
+        Mockito.when(memberRepository.save(ArgumentMatchers.any())).thenReturn(member);
+        Mockito.when(profileService.saveProfile(profileSaveRequest, member)).thenReturn(profileEntity.getId());
+        Mockito.when(authService.createAuth(ArgumentMatchers.any())).thenReturn(tokenProvider.createAuthToken(member.getUsername(), new Date(new Date().getTime()+1800000)));
+        Mockito.when(authService.setRefreshToken(ArgumentMatchers.any())).thenReturn(new MemberRefreshToken(member.getUsername(), "refreshToken"));
+
+        Mockito.when(memberRepository.findById(member.getId())).thenReturn(Optional.of(member));
+
 
         // when
-        Mockito.when(memberRepository.save(ArgumentMatchers.any())).thenReturn(member);
-        Mockito.when(profileService.saveProfile(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(1L);
-        AuthInfo authInfo = memberService.join(request);
+        TokenDto tokenDto = memberService.join(request);
+        Optional<Member> memberOptional = memberRepository.findById(member.getId());
 
         // then
-
+        Assertions.assertThat(member.getId()).isEqualTo(memberOptional.get().getId());
+        Assertions.assertThat(!tokenDto.getAccessToken().isEmpty()).isTrue();
     }
 }

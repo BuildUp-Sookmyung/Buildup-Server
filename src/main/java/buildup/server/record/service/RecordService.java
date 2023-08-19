@@ -6,9 +6,6 @@ import buildup.server.activity.exception.ActivityException;
 import buildup.server.activity.repository.ActivityRepository;
 import buildup.server.category.CategoryRepository;
 import buildup.server.category.CategoryService;
-import buildup.server.member.domain.Member;
-import buildup.server.member.exception.MemberErrorCode;
-import buildup.server.member.exception.MemberException;
 import buildup.server.member.repository.MemberRepository;
 import buildup.server.member.service.MemberService;
 import buildup.server.member.service.S3Service;
@@ -25,9 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,25 +39,14 @@ public class RecordService {
     private final S3Service s3Service;
 
     @Transactional
-    public Long createRecord(RecordSaveRequest requestDto, List<MultipartFile> multipartFiles) {
+    public Record createRecord(RecordSaveRequest requestDto) {
 
-        if (multipartFiles == null || multipartFiles.isEmpty()) {
-            throw new RecordException(RecordErrorCode.WRONG_INPUT_CONTENT);
-        }
         Activity activity = activityRepository.findById(requestDto.getActivityId())
                 .orElseThrow(() -> new ActivityException(ActivityErrorCode.ACTIVITY_NOT_FOUND));
         Record record = requestDto.toRecord(activity);
         //TODO:set을 updaterecord로 고치기
         record.setActivity(activity);
-        recordRepository.save(record);
-
-        for (MultipartFile multipartFile : multipartFiles) {
-            String imgUrl = s3Service.uploadOneRecord(multipartFile);
-            RecordImg recordImg = new RecordImg(imgUrl, record);
-            recordImgRepository.save(recordImg);
-        }
-
-        return record.getId();
+        return recordRepository.save(record);
     }
 
 
@@ -106,13 +90,13 @@ public class RecordService {
         int existingImagesCount = recordImagesByRecordId.size();
         int newImagesCount = multipartFiles.size();
 
-        List<String> imgUrls = s3Service.uploadRecord(multipartFiles);
+        List<String> imgUrls = s3Service.uploadRecordImg(multipartFiles);
 
         for(int i=0; i<newImagesCount; i++) {
             if(i < existingImagesCount) {
                 String old_url = recordImagesByRecordId.get(i).getStoreUrl();
                 if(old_url != null){
-                    s3Service.deleteOneRecord(old_url);
+                    s3Service.deleteOneRecordImg(old_url);
                 }
                 recordImagesByRecordId.get(i).setStoreUrl(imgUrls.get(i));
             } else {
@@ -122,7 +106,7 @@ public class RecordService {
         }
 
         for(int i=newImagesCount; i<existingImagesCount; i++) {
-            s3Service.deleteOneRecord(recordImagesByRecordId.get(i).getStoreUrl());
+            s3Service.deleteOneRecordImg(recordImagesByRecordId.get(i).getStoreUrl());
             recordImgRepository.delete(recordImagesByRecordId.get(i));
         }
     }
@@ -137,7 +121,7 @@ public class RecordService {
 
     private RecordImgRequest updateOneImage(MultipartFile multipartFile){
         return RecordImgRequest.builder()
-                .storeUrl(s3Service.uploadOneRecord(multipartFile))
+                .storeUrl(s3Service.uploadOneRecordImg(multipartFile))
                 .build();
     }
 
@@ -158,5 +142,13 @@ public class RecordService {
     }
 
 
-
+    public void createRecordImages(Record record, List<String> urls) {
+        urls.forEach(
+                url -> {
+                    RecordImg recordImg = new RecordImg(url, record);
+                    recordImgRepository.save(recordImg);
+                    record.getImages().add(recordImg);
+                }
+        );
+    }
 }
