@@ -5,6 +5,7 @@ import buildup.server.activity.dto.*;
 import buildup.server.activity.exception.ActivityErrorCode;
 import buildup.server.activity.exception.ActivityException;
 import buildup.server.activity.repository.ActivityRepository;
+import buildup.server.auth.domain.CustomUserDetails;
 import buildup.server.category.Category;
 import buildup.server.category.CategoryRepository;
 import buildup.server.category.CategoryService;

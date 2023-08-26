@@ -52,7 +52,7 @@ public class MemberController {
     @PostMapping("/find-id")
     public IdResponse findIdAndDate(@Valid @RequestBody EmailAuthRequest codeDto) {
 
-        String[] result = emailService.findIdAndDate(codeDto.getEmail());
+        String[] result = memberService.findIdAndDate(codeDto.getEmail());
         String username = result[0];
         String createdAt = result[1];
 
@@ -65,10 +65,7 @@ public class MemberController {
 
     @PostMapping("/find-pw")
     public StringResponse findPw(@Valid @RequestBody NewLoginRequest dto) {
-        emailService.updatePw(dto);
-//        Authentication authentication = authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword()));
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
+        memberService.updatePw(dto);
         return new StringResponse("비밀번호 재설정이 완료되었습니다.");
 
     }

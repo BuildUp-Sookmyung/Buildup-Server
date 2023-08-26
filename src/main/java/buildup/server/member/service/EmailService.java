@@ -90,41 +90,7 @@ public class EmailService {
         return templateEngine.process("mail3", context); //mail3.html
     }
 
-    @Transactional
-    public String[] findIdAndDate(String email) throws MemberException {
 
-        List<Member> findMemberIDList = memberRepository.findAllByEmail(email);
-
-        if(!findMemberIDList.isEmpty()){
-            for(Member member : findMemberIDList){
-                if(member.getProvider().toString() == "LOCAL"){
-                    String memberUsername = member.getUsername();
-                    String memberCreated = member.getCreatedAt().toString().substring(0, 10) + " 가입";
-                    String[] result = {memberUsername, memberCreated};
-                    return result;
-                }
-            }
-            throw new MemberException(MemberErrorCode.ACCOUNT_IN_SOCIAL);
-        }else{
-            throw new MemberException(MemberErrorCode.MEMBER_NOT_FOUND);    // 등록된 id 없을때
-        }
-
-    }
-
-    @Transactional
-    public void updatePw(NewLoginRequest requestDto) {
-        List<Member> findMemberIDList = memberRepository.findAllByEmail(requestDto.getEmail());
-
-        if(!findMemberIDList.isEmpty()){
-            for(Member member : findMemberIDList){
-                if(member.getProvider().toString() == "LOCAL"){
-                    member.modifyPw(PasswordEncoderFactories.createDelegatingPasswordEncoder().encode(requestDto.getPassword()));
-                }
-            }
-        }else{
-            throw new MemberException(MemberErrorCode.MEMBER_PW_UPDATE_FAILED);
-        }
-    }
 
 
 

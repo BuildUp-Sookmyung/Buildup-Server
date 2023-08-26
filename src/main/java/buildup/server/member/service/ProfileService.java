@@ -8,6 +8,7 @@ import buildup.server.auth.exception.AuthErrorCode;
 import buildup.server.auth.exception.AuthException;
 import buildup.server.auth.repository.RefreshTokenRepository;
 import buildup.server.entity.Interest;
+import buildup.server.entity.InterestCategory;
 import buildup.server.member.domain.Member;
 import buildup.server.member.domain.Profile;
 import buildup.server.member.dto.ProfileHomeResponse;
@@ -128,7 +129,8 @@ public class ProfileService {
 
     private void saveInterests(List<String> requestList, Profile profile) {
         for (String interest : requestList) {
-            Interest select = interestRepository.save(new Interest(profile, interest));
+//            Interest select = interestRepository.save(new Interest(profile, interest));
+            Interest select = interestRepository.save(new Interest(profile, InterestCategory.fromField(interest)));
             profile.getInterests().add(select);
         }
     }

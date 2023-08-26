@@ -5,10 +5,7 @@ import buildup.server.auth.dto.TokenDto;
 import buildup.server.auth.service.AuthService;
 import buildup.server.member.domain.Member;
 import buildup.server.member.domain.Provider;
-import buildup.server.member.dto.LocalJoinRequest;
-import buildup.server.member.dto.LoginRequest;
-import buildup.server.member.dto.SocialJoinRequest;
-import buildup.server.member.dto.SocialLoginRequest;
+import buildup.server.member.dto.*;
 import buildup.server.member.exception.MemberErrorCode;
 import buildup.server.member.exception.MemberException;
 import buildup.server.member.repository.MemberRepository;
@@ -16,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,13 +36,42 @@ public class MemberService {
         return "인증정보="+currentMember.getUsername();
     }
 
-    // TODO: 로그인한 사용자
+     // TODO: 로그인한 사용자
+     public CustomUserDetails findCurrentMemberCD() {
+         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+         if (!authentication.isAuthenticated()) {
+             throw new IllegalStateException("사용자 로그인 상태가 아닙니다.");
+         }
+         Member user = memberRepository.findByUsername(authentication.getName())
+                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
+         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+         return userDetails;
+     }
     public Member findCurrentMember() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Member user = memberRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
         return user;
+
     }
+
+
+//    public String getUsernameFromToken(String token) {
+//        Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+//
+//        return claims.getSubject();
+//    }
+//
+//    public UserDetails getUserDetails() {
+//        String token = request.getHeader("Authorization");
+//
+//        String username = jwtUtil.getUsernameFromToken(token);
+//        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+//
+//        return userDetails;
+//    }
+
+
 
     // 일반 회원가입 후 자동 로그인
     @Transactional
@@ -130,6 +157,41 @@ public class MemberService {
         return memberRepository.save(
                 SocialJoinRequest.toEntity(request, pw)
         );
+    }
+    @Transactional
+    public String[] findIdAndDate(String email) throws MemberException {
+
+        List<Member> findMemberIDList = memberRepository.findAllByEmail(email);
+
+        if(!findMemberIDList.isEmpty()){
+            for(Member member : findMemberIDList){
+                if(member.getProvider().toString() == "LOCAL"){
+                    String memberUsername = member.getUsername();
+                    String memberCreated = member.getCreatedAt().toString().substring(0, 10) + " 가입";
+                    String[] result = {memberUsername, memberCreated};
+                    return result;
+                }
+            }
+            throw new MemberException(MemberErrorCode.ACCOUNT_IN_SOCIAL);
+        }else{
+            throw new MemberException(MemberErrorCode.MEMBER_NOT_FOUND);    // 등록된 id 없을때
+        }
+
+    }
+
+    @Transactional
+    public void updatePw(NewLoginRequest requestDto) {
+        List<Member> findMemberIDList = memberRepository.findAllByEmail(requestDto.getEmail());
+
+        if(!findMemberIDList.isEmpty()){
+            for(Member member : findMemberIDList){
+                if(member.getProvider().toString() == "LOCAL"){
+                    member.modifyPw(PasswordEncoderFactories.createDelegatingPasswordEncoder().encode(requestDto.getPassword()));
+                }
+            }
+        }else{
+            throw new MemberException(MemberErrorCode.MEMBER_PW_UPDATE_FAILED);
+        }
     }
 
 
