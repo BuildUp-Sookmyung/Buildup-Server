@@ -24,8 +24,10 @@ public class ProfilePageResponse {
     private String schoolPublicYn;
 
     public static ProfilePageResponse of(Profile profile) {
+//        List<String> fieldList = profile.getInterests().stream()
+//                .map(Interest::getField).collect(Collectors.toList());
         List<String> fieldList = profile.getInterests().stream()
-                .map(Interest::getField).collect(Collectors.toList());
+                .map(interest -> interest.getField().getField()).collect(Collectors.toList());
         return new ProfilePageResponse(
                 profile.getNickname(),
                 profile.getEmail(),

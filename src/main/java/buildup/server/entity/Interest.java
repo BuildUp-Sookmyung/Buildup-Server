@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 @Entity
 public class Interest {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "interest_id")
     private Long id;
 
@@ -19,11 +20,10 @@ public class Interest {
     @JoinColumn(name = "profile_id")
     private Profile profile;
 
-    private String field;
-    //TODO: enum 고민해보기
+    @Enumerated(EnumType.STRING)
+    private InterestCategory field;
 
-
-    public Interest(Profile profile, String field) {
+    public Interest(Profile profile, InterestCategory field) {
         this.profile = profile;
         this.field = field;
     }

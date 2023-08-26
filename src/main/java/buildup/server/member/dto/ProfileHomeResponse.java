@@ -34,7 +34,7 @@ public class ProfileHomeResponse implements Comparable<ProfileHomeResponse>{
                 profile.getSchoolPublicYn(),
                 profile.getImgUrl(),
                 profile.getInterests().stream()
-                        .map(Interest::getField).collect(Collectors.toList())
+                        .map(interest -> interest.getField().getField()).collect(Collectors.toList())
         );
     }
 

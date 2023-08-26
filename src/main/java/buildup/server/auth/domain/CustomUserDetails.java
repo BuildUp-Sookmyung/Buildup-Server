@@ -16,11 +16,12 @@ import java.util.Collections;
 @Getter
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
-
     private final String username;
     private final String password;
-    private final Provider provider;
     private final Role role;
+    private final Provider provider;
+    private final String email;
+    private final String emailAgreeYn;
     private final Collection<GrantedAuthority> authorities;
 
     @Override
@@ -62,8 +63,10 @@ public class CustomUserDetails implements UserDetails {
         return new CustomUserDetails(
                 member.getUsername(),
                 member.getPassword(),
+                member.getRole(),
                 member.getProvider(),
-                Role.USER,
+                member.getEmail(),
+                member.getEmailAgreeYn(),
                 Collections.singletonList(new SimpleGrantedAuthority(member.getRoleKey()))
         );
     }
